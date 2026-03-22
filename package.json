@@ -1,0 +1,13 @@
+{
+  "name": "northbase-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "install:all": "npm install"
+  }
+}

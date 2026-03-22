@@ -1,0 +1,25 @@
+{
+  "name": "northbase",
+  "version": "0.1.8",
+  "description": "Local-first CLI for reading and writing text files stored in Supabase",
+  "type": "module",
+  "bin": {
+    "northbase": "src/northbase.mjs"
+  },
+  "exports": {
+    ".": "./src/northbase.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "keywords": [
+    "cli",
+    "supabase",
+    "notes",
+    "files"
+  ],
+  "license": "MIT"
+}

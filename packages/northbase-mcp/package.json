@@ -1,0 +1,24 @@
+{
+  "name": "northbase-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for northbase — exposes northbase file operations as MCP tools",
+  "type": "module",
+  "bin": {
+    "northbase-mcp": "src/index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "northbase": "*"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "northbase",
+    "supabase",
+    "files"
+  ],
+  "license": "MIT"
+}

@@ -421,5 +421,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+// ── process-level error traps ─────────────────────────────────────────────────
+
+process.on("uncaughtException", (err) => {
+  console.error("[northbase-mcp] uncaughtException:", err?.stack ?? err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[northbase-mcp] unhandledRejection:", reason?.stack ?? reason);
+  process.exit(1);
+});
+
+// ── startup ───────────────────────────────────────────────────────────────────
+
+console.error("[northbase-mcp] starting up, node", process.version, "pid", process.pid);
+
+try {
+  const transport = new StdioServerTransport();
+  console.error("[northbase-mcp] transport created");
+  await server.connect(transport);
+  console.error("[northbase-mcp] connected, server running");
+} catch (err) {
+  console.error("[northbase-mcp] fatal startup error:", err?.stack ?? err);
+  process.exit(1);
+}

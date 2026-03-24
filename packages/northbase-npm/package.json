@@ -1,11 +1,12 @@
 {
   "name": "northbase",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Local-first CLI for reading and writing text files stored in Supabase",
   "type": "module",
   "bin": {
     "northbase": "src/northbase.mjs"
   },
+  "main": "src/northbase.mjs",
   "exports": {
     ".": "./src/northbase.mjs"
   },

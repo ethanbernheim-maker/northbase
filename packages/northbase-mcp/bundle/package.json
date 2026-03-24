@@ -1,0 +1,9 @@
+{
+  "name": "northbase-mcp-bundle",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "northbase": "^0.1.8"
+  }
+}

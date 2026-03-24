@@ -1,0 +1,58 @@
+{
+  "manifest_version": "0.3",
+  "name": "northbase-mcp",
+  "display_name": "Northbase",
+  "version": "0.1.0",
+  "description": "Read and write your Northbase files directly from Claude",
+  "long_description": "Northbase is a local-first file store backed by Supabase. This extension exposes your Northbase files as MCP tools so Claude can read, write, list, and sync them without leaving your conversation.\n\nAuthentication uses the session created by `northbase login` — no separate setup required.",
+  "author": {
+    "name": "Ethan Bernheim"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethanbernheim-maker/northbase.git"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.mjs"]
+    }
+  },
+  "tools": [
+    {
+      "name": "northbase_get",
+      "description": "Get the content of a file stored in Northbase by its path"
+    },
+    {
+      "name": "northbase_put",
+      "description": "Write content to a file in Northbase (creates or overwrites)"
+    },
+    {
+      "name": "northbase_list",
+      "description": "List all file paths stored in Northbase, with optional prefix filter"
+    },
+    {
+      "name": "northbase_pull",
+      "description": "Bulk-sync files from Northbase to the local cache"
+    },
+    {
+      "name": "northbase_whoami",
+      "description": "Show the authenticated Northbase user's email and ID"
+    },
+    {
+      "name": "northbase_session_status",
+      "description": "Show session expiry and token refresh status"
+    }
+  ],
+  "keywords": ["northbase", "supabase", "files", "notes", "sync"],
+  "privacy_policies": ["https://supabase.com/privacy"],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

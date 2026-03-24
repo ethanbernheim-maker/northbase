@@ -487,6 +487,31 @@ process.on("unhandledRejection", (reason) => {
 console.error("[northbase-mcp] starting up, node", process.version, "pid", process.pid);
 
 try {
+  // Eagerly ensure a valid session exists before accepting any tool calls.
+  // Check if session.json is present and not about to expire.
+  let sessionValid = false;
+  try {
+    const s = loadSession();
+    const nowSec = Math.floor(Date.now() / 1000);
+    sessionValid = !!(s.access_token && s.refresh_token && (s.expires_at ?? 0) > nowSec + 60);
+    if (sessionValid) console.error("[northbase-mcp] found valid session for", s.user?.email);
+  } catch { /* no session file */ }
+
+  if (!sessionValid) {
+    const email    = process.env.NORTHBASE_EMAIL?.trim();
+    const password = process.env.NORTHBASE_PASSWORD;
+    if (email && password) {
+      console.error("[northbase-mcp] no valid session — logging in with configured credentials");
+      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      await loginWithCredentials(supabase);
+      console.error("[northbase-mcp] startup login complete, session written to", SESSION_PATH);
+    } else {
+      console.error("[northbase-mcp] no session and no credentials configured — tool calls will fail until credentials are set");
+    }
+  }
+
   const transport = new StdioServerTransport();
   console.error("[northbase-mcp] transport created");
   await server.connect(transport);

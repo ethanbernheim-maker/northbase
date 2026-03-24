@@ -77,6 +77,30 @@ function deleteSession() {
   try { fs.unlinkSync(SESSION_PATH); } catch { /* already gone */ }
 }
 
+// ── credential login ──────────────────────────────────────────────────────────
+
+async function loginWithCredentials(supabase) {
+  const email    = process.env.NORTHBASE_EMAIL?.trim();
+  const password = process.env.NORTHBASE_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      "Not logged in and no credentials configured. " +
+      "Add your email and password in the extension settings."
+    );
+  }
+  console.error("NORTHBASE signing in with configured credentials for", email);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(`Credential login failed: ${error.message}`);
+  if (!data.session?.access_token) throw new Error("Credential login returned no session.");
+  saveSession(data.session);
+  console.error("NORTHBASE signed in as", data.session.user?.email);
+  const { error: setErr } = await supabase.auth.setSession({
+    access_token:  data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+  if (setErr) throw setErr;
+}
+
 // ── authenticated supabase client ─────────────────────────────────────────────
 
 async function doRefresh(supabase, stored) {
@@ -93,9 +117,9 @@ async function doRefresh(supabase, stored) {
                  || error.code  === "invalid_grant"
                  || error.code  === "refresh_token_not_found";
     if (revoked) {
-      console.error("NORTHBASE session token invalid — deleting session.json");
+      console.error("NORTHBASE refresh token revoked — deleting session.json");
       deleteSession();
-      throw new Error("Refresh token is no longer valid. Run `northbase login`.");
+      throw new Error("NORTHBASE_REFRESH_REVOKED");
     }
     throw new Error(`Session refresh failed (${error.message}) — session preserved, will retry next command.`);
   }
@@ -113,12 +137,20 @@ async function doRefresh(supabase, stored) {
 }
 
 async function getAuthenticatedClient() {
-  const stored = loadSession();
-  debug(`session loaded expires_at=${stored.expires_at}`);
-
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // Load session — fall back to credential login if session file is missing/invalid.
+  let stored;
+  try {
+    stored = loadSession();
+  } catch {
+    await loginWithCredentials(supabase);
+    stored = loadSession();
+  }
+
+  debug(`session loaded expires_at=${stored.expires_at}`);
 
   const nowSec        = Math.floor(Date.now() / 1000);
   const expiresAt     = stored.expires_at ?? 0;
@@ -127,7 +159,16 @@ async function getAuthenticatedClient() {
   debug(`seconds_remaining=${secsRemaining} needs_refresh=${needsRefresh}`);
 
   if (needsRefresh) {
-    await doRefresh(supabase, stored);
+    try {
+      await doRefresh(supabase, stored);
+    } catch (err) {
+      // Refresh token revoked — session.json already deleted. Re-login with credentials.
+      if (err.message === "NORTHBASE_REFRESH_REVOKED") {
+        await loginWithCredentials(supabase);
+      } else {
+        throw err;
+      }
+    }
   } else {
     const { data: setData, error } = await supabase.auth.setSession({
       access_token:  stored.access_token,
@@ -135,7 +176,15 @@ async function getAuthenticatedClient() {
     });
     if (error) {
       debug(`setSession failed (${error.message}) — falling back to refresh`);
-      await doRefresh(supabase, stored);
+      try {
+        await doRefresh(supabase, stored);
+      } catch (err) {
+        if (err.message === "NORTHBASE_REFRESH_REVOKED") {
+          await loginWithCredentials(supabase);
+        } else {
+          throw err;
+        }
+      }
     } else if (setData?.session && setData.session.access_token !== stored.access_token) {
       console.error("NORTHBASE setSession triggered internal refresh — persisting new session");
       saveSession(setData.session);

@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "northbase-mcp",
   "display_name": "Northbase",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read and write your Northbase files directly from Claude",
-  "long_description": "Northbase is a local-first file store backed by Supabase. This extension exposes your Northbase files as MCP tools so Claude can read, write, list, and sync them without leaving your conversation.\n\nAuthentication uses the session created by `northbase login` — no separate setup required.",
+  "long_description": "Northbase is a local-first file store backed by Supabase. This extension exposes your Northbase files as MCP tools so Claude can read, write, list, and sync them without leaving your conversation.\n\nEnter your Northbase email and password below. The server will sign in automatically and cache the session at ~/.northbase/session.json, refreshing it silently when it expires.",
   "author": {
     "name": "Ethan Bernheim"
   },
@@ -18,7 +18,26 @@
     "entry_point": "server/index.mjs",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/server/index.mjs"]
+      "args": ["${__dirname}/server/index.mjs"],
+      "env": {
+        "NORTHBASE_EMAIL": "${user_config.email}",
+        "NORTHBASE_PASSWORD": "${user_config.password}"
+      }
+    }
+  },
+  "user_config": {
+    "email": {
+      "type": "string",
+      "title": "Northbase email",
+      "description": "The email address you use to log in to Northbase.",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "Northbase password",
+      "description": "Your Northbase password. Stored securely by Claude Desktop.",
+      "sensitive": true,
+      "required": true
     }
   },
   "tools": [
